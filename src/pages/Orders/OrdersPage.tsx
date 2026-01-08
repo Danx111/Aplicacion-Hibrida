@@ -148,12 +148,23 @@ Estado: ${o.status === 'PENDING' ? 'Pendiente' : 'Entregado'}
         <IonPage>
             <IonHeader>
                 <IonToolbar>
-                    <IonTitle>Pedidos</IonTitle>
                     <IonButtons slot="end">
-                        <IonButton onClick={openCreate}>+ Nuevo</IonButton>
+                        <IonButton size="large" color="primary" onClick={openCreate}>
+                            + NUEVO
+                        </IonButton>
                     </IonButtons>
+
+                    <IonTitle className="ion-text-center">
+                        <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.1 }}>
+                            <span style={{ fontSize: 20, fontWeight: 800 }}>DulceStock</span>
+                            <span style={{ fontSize: 13, opacity: 0.7, fontWeight: 500 }}>
+                                Pedidos
+                            </span>
+                        </div>
+                    </IonTitle>
                 </IonToolbar>
             </IonHeader>
+
 
             <IonContent className="ion-padding">
                 <IonSegment value={filter} onIonChange={(e) => setFilter(e.detail.value as any)}>

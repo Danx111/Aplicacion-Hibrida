@@ -85,12 +85,23 @@ export default function InventoryPage() {
         <IonPage>
             <IonHeader>
                 <IonToolbar>
-                    <IonTitle>Inventario (Unidades)</IonTitle>
                     <IonButtons slot="end">
-                        <IonButton onClick={openCreate}>+ Agregar</IonButton>
+                        <IonButton size="large" color="primary" onClick={openCreate}>
+                            + AGREGAR
+                        </IonButton>
                     </IonButtons>
+
+                    <IonTitle className="ion-text-center">
+                        <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.1 }}>
+                            <span style={{ fontSize: 20, fontWeight: 800 }}>DulceStock</span>
+                            <span style={{ fontSize: 13, opacity: 0.7, fontWeight: 500 }}>
+                                Inventario (Unidades)
+                            </span>
+                        </div>
+                    </IonTitle>
                 </IonToolbar>
             </IonHeader>
+
 
             <IonContent className="ion-padding">
                 {items.length === 0 && (
