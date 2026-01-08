@@ -1,7 +1,0 @@
-{
-  "name": "temp",
-  "integrations": {
-    "capacitor": {}
-  },
-  "type": "react-vite"
-}

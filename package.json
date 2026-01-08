@@ -1,5 +1,5 @@
 {
-  "name": "temp",
+  "name": "cookie-log",
   "private": true,
   "version": "0.0.1",
   "type": "module",
@@ -16,16 +16,19 @@
     "@capacitor/core": "8.0.0",
     "@capacitor/haptics": "8.0.0",
     "@capacitor/keyboard": "8.0.0",
+    "@capacitor/share": "^8.0.0",
     "@capacitor/status-bar": "8.0.0",
     "@ionic/react": "^8.5.0",
     "@ionic/react-router": "^8.5.0",
     "@types/react-router": "^5.1.20",
     "@types/react-router-dom": "^5.3.3",
     "ionicons": "^7.4.0",
+    "localforage": "^1.10.0",
     "react": "19.0.0",
     "react-dom": "19.0.0",
     "react-router": "^5.3.4",
-    "react-router-dom": "^5.3.4"
+    "react-router-dom": "^5.3.4",
+    "uuid": "^13.0.0"
   },
   "devDependencies": {
     "@capacitor/cli": "8.0.0",
