@@ -1,8 +1,8 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'io.ionic.starter',
-  appName: 'temp',
+  appId: 'com.tuapp.cookielog',
+  appName: 'Cookie-Log',
   webDir: 'dist'
 };
 
