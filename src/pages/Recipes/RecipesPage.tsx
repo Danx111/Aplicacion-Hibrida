@@ -49,6 +49,7 @@ export default function RecipesPage() {
 
     const [lineItemId, setLineItemId] = useState<string>('');
     const [lineQty, setLineQty] = useState<number>(1);
+    const [unitM, setUnitM] =useState('');
 
     const [deleteId, setDeleteId] = useState<string | null>(null);
 
@@ -109,7 +110,7 @@ export default function RecipesPage() {
 
         setLines((prev) => [
             ...prev,
-            { itemId: lineItemId, qty: Math.max(1, Math.floor(lineQty)) },
+            { itemId: lineItemId, qty: Math.max(1, Math.floor(lineQty)), unidadMedida: unitM },
         ]);
 
         setLineItemId('');
@@ -304,12 +305,26 @@ export default function RecipesPage() {
                             </IonItem>
 
                             <IonItem>
-                                <IonLabel position="stacked">Cantidad (unidades)</IonLabel>
+                                <IonLabel position="stacked">Cantidad</IonLabel>
                                 <IonInput
                                     type="number"
                                     value={lineQty}
                                     onIonInput={(e) => setLineQty(Math.max(1, toNumber(e.detail.value, 1)))}
                                 />
+                            </IonItem>
+
+                            <IonItem>
+                                <IonLabel position="stacked">Unidad de medida de la cantidad</IonLabel>
+                                <IonSelect
+                                    value={unitM}
+                                    placeholder="Selecciona unidad"
+                                    onIonChange={e => setUnitM(e.detail.value)}
+                                >
+                                    <IonSelectOption value="gr">Gramos (gr)</IonSelectOption>
+                                    <IonSelectOption value="kg">Kilogramos (Kg)</IonSelectOption>
+                                    <IonSelectOption value="l">Litros (l)</IonSelectOption>
+                                    <IonSelectOption value="ml">Mililitros (ml)</IonSelectOption>
+                                </IonSelect>
                             </IonItem>
 
                             <IonButton expand="block" onClick={addLine} style={{ marginTop: 10 }}>
@@ -321,7 +336,7 @@ export default function RecipesPage() {
                                 {lines.map((ln, idx) => (
                                     <IonItem key={`${ln.itemId}-${idx}`}>
                                         <IonLabel>
-                                            {itemNameById(ln.itemId)} · {ln.qty} u
+                                            {itemNameById(ln.itemId)} · {ln.qty} {ln.unidadMedida}
                                         </IonLabel>
                                         <IonButton color="danger" onClick={() => removeLineAt(idx)}>
                                             Quitar

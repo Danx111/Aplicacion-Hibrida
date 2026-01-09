@@ -15,6 +15,8 @@ import {
   IonModal,
   IonPage,
   IonSearchbar,
+  IonSelect,
+  IonSelectOption,
   IonTitle,
   IonToolbar,
 } from '@ionic/react';
@@ -42,6 +44,8 @@ export default function InventoryPage() {
   const [name, setName] = useState('');
   const [stock, setStock] = useState<number>(0);
   const [unitCost, setUnitCost] = useState<number>(0);
+  const [contNeto, setContNeto] = useState<number>(0);
+  const [unit, setUnit] = useState('');
 
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
@@ -71,6 +75,8 @@ export default function InventoryPage() {
     setName('');
     setStock(0);
     setUnitCost(0);
+    setContNeto(0);
+    setUnit('');
     setOpen(true);
   }
 
@@ -81,6 +87,8 @@ export default function InventoryPage() {
     setName(it.name);
     setStock(it.stock);
     setUnitCost(it.unitCost);
+    setContNeto(it.contenidoNeto);
+    setUnit(it.unidadContenidoNeto);
     setOpen(true);
   }
 
@@ -88,7 +96,7 @@ export default function InventoryPage() {
     if (!name.trim()) return;
 
     await upsertInventory(
-      { name: name.trim(), stock: Math.max(0, stock), unitCost: Math.max(0, unitCost) },
+      { name: name.trim(), stock: Math.max(0, stock), unitCost: Math.max(0, unitCost),contenidoNeto: Math.max(0,contNeto),unidadContenidoNeto:unit },
       editingId
     );
 
@@ -232,6 +240,29 @@ export default function InventoryPage() {
                 value={stock}
                 onIonInput={(e) => setStock(Math.max(0, toNumber(e.detail.value, 0)))}
               />
+            </IonItem>
+
+            <IonItem>
+              <IonLabel position="stacked">Contenido neto por unidad</IonLabel>
+              <IonInput
+              type='number'
+              value={contNeto}
+              onIonInput={(e) => setContNeto(Math.max(0, toNumber(e.detail.value, 0)))}
+              />
+            </IonItem>
+
+            <IonItem>
+              <IonLabel position="stacked">Unidad de Medida</IonLabel>
+              <IonSelect
+              value={unit}
+              placeholder="Selecciona unidad"
+              onIonChange={e => setUnit(e.detail.value)}
+              >
+                <IonSelectOption value="gr">Gramos (gr)</IonSelectOption>
+                <IonSelectOption value="kg">Kilogramos (Kg)</IonSelectOption>
+                <IonSelectOption value="l">Litros (l)</IonSelectOption>
+                <IonSelectOption value="ml">Mililitros (ml)</IonSelectOption>
+              </IonSelect>
             </IonItem>
 
             <IonItem>

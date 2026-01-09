@@ -3,5 +3,7 @@ export interface InventoryItem {
   name: string;
   stock: number;     // unidades
   unitCost: number;  // costo por unidad
-  updatedAt: number;
+  updatedAt: number; 
+  contenidoNeto: number;  //cantidad que trae el empaque
+  unidadContenidoNeto: string;   //unidad del empaque
 }
