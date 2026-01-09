@@ -1,6 +1,17 @@
 import { InventoryItem } from '../models/inventory';
 import { Recipe } from '../models/recipe';
 
+const CONVERSION_FACTORS: {[key: string]: number} = {
+  //masas (base: gramos)
+  'gr': 1,
+  'kg': 1000,
+  //volumenes (base: mililitros)
+  'ml': 1,
+  'l': 1000
+};
+
+
+
 export function calcRecipeCost(recipe: Recipe, inventory: InventoryItem[]) {
   let total = 0;
   for (const line of recipe.lines) {

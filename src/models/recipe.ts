@@ -1,6 +1,7 @@
 export interface RecipeLine {
   itemId: string;
   qty: number; // unidades usadas por 1 lote
+  unidadMedida: string; //unidad de la medida usada
 }
 
 export interface Recipe {
