@@ -2,14 +2,18 @@ import {
     IonAlert,
     IonButton,
     IonButtons,
+    IonCard,
+    IonCardContent,
+    IonChip,
     IonContent,
     IonHeader,
+    IonIcon,
     IonInput,
     IonItem,
     IonLabel,
-    IonList,
     IonModal,
     IonPage,
+    IonSearchbar,
     IonSegment,
     IonSegmentButton,
     IonSelect,
@@ -17,6 +21,7 @@ import {
     IonTitle,
     IonToolbar,
 } from '@ionic/react';
+import { checkmarkDone, shareSocial, trash } from 'ionicons/icons';
 import { useEffect, useMemo, useState } from 'react';
 
 import { InventoryItem } from '../../models/inventory';
@@ -41,6 +46,7 @@ export default function OrdersPage() {
     const [orders, setOrders] = useState<Order[]>([]);
     const [marginPct, setMarginPct] = useState<number>(30);
 
+    const [query, setQuery] = useState('');
     const [filter, setFilter] = useState<OrderStatus | 'ALL'>('ALL');
 
     const [open, setOpen] = useState(false);
@@ -57,6 +63,7 @@ export default function OrdersPage() {
             listOrders(),
             getSettings(),
         ]);
+
         setInventory(inv);
         setRecipes(rec);
         setOrders(ord);
@@ -67,18 +74,31 @@ export default function OrdersPage() {
         load();
     }, []);
 
-    const filteredOrders = useMemo(() => {
-        const base = filter === 'ALL' ? orders : orders.filter(o => o.status === filter);
-
-        return [...base].sort((a, b) =>
-            a.customerName.localeCompare(b.customerName, 'es', { sensitivity: 'base' })
-        );
-    }, [orders, filter]);
-
-
     function recipeById(id: string) {
-        return recipes.find(r => r.id === id);
+        return recipes.find((r) => r.id === id);
     }
+
+    const filteredOrders = useMemo(() => {
+        const base = filter === 'ALL' ? orders : orders.filter((o) => o.status === filter);
+
+        const q = query.trim().toLowerCase();
+        const searched = !q
+            ? base
+            : base.filter((o) => {
+                const r = recipeById(o.recipeId);
+                const recipeName = (r?.name ?? '').toLowerCase();
+                return (
+                    o.customerName.toLowerCase().includes(q) ||
+                    recipeName.includes(q)
+                );
+            });
+
+        return [...searched].sort((a, b) => {
+            const byName = a.customerName.localeCompare(b.customerName, 'es', { sensitivity: 'base' });
+            if (byName !== 0) return byName;
+            return (b.createdAt ?? 0) - (a.createdAt ?? 0);
+        });
+    }, [orders, filter, query, recipes]);
 
     async function openCreate() {
         await load();
@@ -87,7 +107,6 @@ export default function OrdersPage() {
         setBatches(1);
         setOpen(true);
     }
-
 
     async function saveOrder() {
         if (!customerName.trim()) return;
@@ -111,38 +130,36 @@ export default function OrdersPage() {
         load();
     }
 
-    async function shareOrder(o: Order) {
-        const r = recipeById(o.recipeId);
-        if (!r) return;
-
-        const cost = calcRecipeCost(r, inventory);
-        const unitPrice = suggestedUnitPrice(cost.unitCost, marginPct);
-
-        const totalUnits = r.yieldUnits * o.batches;
-        const totalSuggested = unitPrice * totalUnits;
-
-        const text = `🍪 Pedido - Cookie-Log
-Cliente: ${o.customerName}
-Producto: ${r.name}
-Cantidad: ${totalUnits} unidades (${o.batches} lote/s)
-
-Costo aprox por unidad: $${cost.unitCost.toFixed(2)}
-Precio sugerido (margen ${marginPct}%): $${unitPrice.toFixed(2)} c/u
-Total sugerido: $${totalSuggested.toFixed(2)}
-
-Estado: ${o.status === 'PENDING' ? 'Pendiente' : 'Entregado'}
-`;
-
-        await shareText('Pedido Cookie-Log', text);
-    }
-
-    function formatDate(ts: number) {
+    function formatDate(ts?: number) {
+        if (!ts) return '';
         try {
             return new Date(ts).toLocaleString();
         } catch {
             return '';
         }
     }
+async function shareOrder(o: Order) {
+				const r = recipeById(o.recipeId);
+				if (!r) return;
+
+				const cost = calcRecipeCost(r, inventory);
+				const unitPrice = suggestedUnitPrice(cost.unitCost, marginPct);
+
+				const totalUnits = r.yieldUnits * o.batches;
+				const totalPrice = unitPrice * totalUnits;
+
+				const text = `🍪 Pedido - DulceStock
+Producto: ${r.name}
+Cantidad: ${totalUnits} unidades
+Precio por unidad: $${unitPrice.toFixed(2)}
+Total: $${totalPrice.toFixed(2)}
+
+Estado: ${o.status === 'PENDING' ? 'Pendiente' : 'Entregado'}
+Fecha: ${formatDate(o.createdAt)}
+`;
+
+				await shareText('Pedido DulceStock', text);
+}
 
     return (
         <IonPage>
@@ -165,42 +182,105 @@ Estado: ${o.status === 'PENDING' ? 'Pendiente' : 'Entregado'}
                 </IonToolbar>
             </IonHeader>
 
-
             <IonContent className="ion-padding">
                 <IonSegment value={filter} onIonChange={(e) => setFilter(e.detail.value as any)}>
-                    <IonSegmentButton value="ALL"><IonLabel>Todos</IonLabel></IonSegmentButton>
-                    <IonSegmentButton value="PENDING"><IonLabel>Pendientes</IonLabel></IonSegmentButton>
-                    <IonSegmentButton value="DELIVERED"><IonLabel>Entregados</IonLabel></IonSegmentButton>
+                    <IonSegmentButton value="ALL">
+                        <IonLabel>Todos</IonLabel>
+                    </IonSegmentButton>
+                    <IonSegmentButton value="PENDING">
+                        <IonLabel>Pendientes</IonLabel>
+                    </IonSegmentButton>
+                    <IonSegmentButton value="DELIVERED">
+                        <IonLabel>Entregados</IonLabel>
+                    </IonSegmentButton>
                 </IonSegment>
 
-                <IonList>
-                    {filteredOrders.map(o => {
-                        const r = recipeById(o.recipeId);
-                        const totalUnits = r ? r.yieldUnits * o.batches : 0;
+                <IonSearchbar
+                    value={query}
+                    placeholder="Buscar cliente o receta..."
+                    onIonInput={(e) => setQuery(String(e.detail.value ?? ''))}
+                    style={{ marginTop: 10, marginBottom: 10 }}
+                />
 
-                        return (
-                            <IonItem key={o.id}>
-                                <IonLabel>
-                                    <h2>{o.customerName}</h2>
-                                    <p>{r ? r.name : 'Receta eliminada'} · {totalUnits} u</p>
-                                    <p>Estado: {o.status} · {formatDate(o.createdAt)}</p>
-                                </IonLabel>
+                {filteredOrders.length === 0 && (
+                    <p style={{ opacity: 0.7 }}>
+                        No hay pedidos para mostrar.
+                    </p>
+                )}
 
-                                <IonButton onClick={() => toggleStatus(o)}>
-                                    {o.status === 'PENDING' ? 'Entregado' : 'Pendiente'}
-                                </IonButton>
+                {filteredOrders.map((o) => {
+                    const r = recipeById(o.recipeId);
+                    const recipeName = r ? r.name : 'Receta eliminada';
+                    const totalUnits = r ? r.yieldUnits * o.batches : 0;
 
-                                <IonButton onClick={() => shareOrder(o)}>
-                                    Compartir
-                                </IonButton>
+                    return (
+                        <IonCard
+                            key={o.id}
+                            style={{
+                                borderRadius: 14,
+                                boxShadow: '0 6px 18px rgba(0,0,0,0.10)',
+                                marginBottom: 14,
+                            }}
+                        >
+                            <IonCardContent>
+                                <div
+                                    style={{
+                                        display: 'flex',
+                                        justifyContent: 'space-between',
+                                        alignItems: 'flex-start',
+                                        gap: 12,
+                                    }}
+                                >
+                                    <div style={{ flex: 1 }}>
+                                        <div style={{ fontWeight: 900, fontSize: 16, opacity: 0.75 }}>
+                                            {o.customerName}
+                                        </div>
 
-                                <IonButton color="danger" onClick={() => setDeleteId(o.id)}>
-                                    Borrar
-                                </IonButton>
-                            </IonItem>
-                        );
-                    })}
-                </IonList>
+                                        <div style={{ marginTop: 6, opacity: 0.8 }}>
+                                            {recipeName} · {totalUnits} u ({o.batches} lote/s)
+                                        </div>
+
+                                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 10 }}>
+                                            <IonChip color={o.status === 'PENDING' ? 'warning' : 'success'}>
+                                                {o.status === 'PENDING' ? 'Pendiente' : 'Entregado'}
+                                            </IonChip>
+
+                                            <IonChip color="medium">
+                                                {formatDate(o.createdAt)}
+                                            </IonChip>
+                                        </div>
+                                    </div>
+
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: 10, alignItems: 'flex-end' }}>
+                                        <IonButton
+                                            size="small"
+                                            color={o.status === 'PENDING' ? 'success' : 'medium'}
+                                            onClick={() => toggleStatus(o)}
+                                        >
+                                            <IonIcon icon={checkmarkDone} />
+                                        </IonButton>
+
+                                        <IonButton
+                                            size="small"
+                                            color="primary"
+                                            onClick={() => shareOrder(o)}
+                                        >
+                                            <IonIcon icon={shareSocial} />
+                                        </IonButton>
+
+                                        <IonButton
+                                            size="small"
+                                            color="danger"
+                                            onClick={() => setDeleteId(o.id)}
+                                        >
+                                            <IonIcon icon={trash} />
+                                        </IonButton>
+                                    </div>
+                                </div>
+                            </IonCardContent>
+                        </IonCard>
+                    );
+                })}
 
                 <IonModal isOpen={open} onDidDismiss={() => setOpen(false)}>
                     <IonHeader>
@@ -222,7 +302,6 @@ Estado: ${o.status === 'PENDING' ? 'Pendiente' : 'Entregado'}
                             />
                         </IonItem>
 
-
                         <IonItem>
                             <IonLabel position="stacked">Receta</IonLabel>
                             <IonSelect
@@ -230,11 +309,13 @@ Estado: ${o.status === 'PENDING' ? 'Pendiente' : 'Entregado'}
                                 placeholder="Selecciona una receta"
                                 onIonChange={(e) => setRecipeId(String(e.detail.value))}
                             >
-                                {[...recipes].sort((a, b) => a.name.localeCompare(b.name)).map(r => (
-                                    <IonSelectOption key={r.id} value={r.id}>
-                                        {r.name} (rinde {r.yieldUnits} u)
-                                    </IonSelectOption>
-                                ))}
+                                {[...recipes]
+                                    .sort((a, b) => a.name.localeCompare(b.name, 'es', { sensitivity: 'base' }))
+                                    .map((r) => (
+                                        <IonSelectOption key={r.id} value={r.id}>
+                                            {r.name} (rinde {r.yieldUnits} u)
+                                        </IonSelectOption>
+                                    ))}
                             </IonSelect>
                         </IonItem>
 
