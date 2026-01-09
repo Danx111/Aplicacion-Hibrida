@@ -93,7 +93,6 @@ export default function OrdersPage() {
                 );
             });
 
-        // Orden: cliente A-Z, luego más nuevo primero
         return [...searched].sort((a, b) => {
             const byName = a.customerName.localeCompare(b.customerName, 'es', { sensitivity: 'base' });
             if (byName !== 0) return byName;
