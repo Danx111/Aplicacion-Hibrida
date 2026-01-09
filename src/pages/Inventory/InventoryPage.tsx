@@ -1,229 +1,275 @@
 import {
-    IonAlert,
-    IonButton,
-    IonButtons,
-    IonContent,
-    IonHeader,
-    IonInput,
-    IonItem,
-    IonLabel,
-    IonList,
-    IonModal,
-    IonPage,
-    IonTitle,
-    IonToolbar,
+  IonAlert,
+  IonButton,
+  IonButtons,
+  IonCard,
+  IonCardContent,
+  IonChip,
+  IonContent,
+  IonHeader,
+  IonIcon,
+  IonInput,
+  IonItem,
+  IonLabel,
+  IonList,
+  IonModal,
+  IonPage,
+  IonSearchbar,
+  IonTitle,
+  IonToolbar,
 } from '@ionic/react';
+import { add, remove, trash } from 'ionicons/icons';
 import { useEffect, useMemo, useState } from 'react';
+
 import { InventoryItem } from '../../models/inventory';
 import {
-    adjustStock,
-    listInventory,
-    removeInventory,
-    upsertInventory,
+  adjustStock,
+  listInventory,
+  removeInventory,
+  upsertInventory,
 } from '../../services/inventoryService';
 
 function toNumber(v: any, fallback = 0) {
-    const n = Number(v);
-    return Number.isFinite(n) ? n : fallback;
+  const n = Number(v);
+  return Number.isFinite(n) ? n : fallback;
 }
 
 export default function InventoryPage() {
-    const [items, setItems] = useState<InventoryItem[]>([]);
-    const [open, setOpen] = useState(false);
-    const [editingId, setEditingId] = useState<string | undefined>(undefined);
+  const [items, setItems] = useState<InventoryItem[]>([]);
+  const [open, setOpen] = useState(false);
+  const [editingId, setEditingId] = useState<string | undefined>(undefined);
 
-    const [name, setName] = useState('');
-    const [stock, setStock] = useState<number>(0);
-    const [unitCost, setUnitCost] = useState<number>(0);
+  const [name, setName] = useState('');
+  const [stock, setStock] = useState<number>(0);
+  const [unitCost, setUnitCost] = useState<number>(0);
 
-    const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
 
-    async function load() {
-        setItems(await listInventory());
-    }
+  const [query, setQuery] = useState('');
 
-    useEffect(() => {
-        load();
-    }, []);
+  async function load() {
+    setItems(await listInventory());
+  }
 
-    const editingItem = useMemo(
-        () => items.find((i) => i.id === editingId),
-        [items, editingId]
+  useEffect(() => {
+    load();
+  }, []);
+
+  const editingItem = useMemo(
+    () => items.find((i) => i.id === editingId),
+    [items, editingId]
+  );
+
+  const visibleItems = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return items;
+    return items.filter((i) => i.name.toLowerCase().includes(q));
+  }, [items, query]);
+
+  function openCreate() {
+    setEditingId(undefined);
+    setName('');
+    setStock(0);
+    setUnitCost(0);
+    setOpen(true);
+  }
+
+  function openEdit(id: string) {
+    const it = items.find((x) => x.id === id);
+    if (!it) return;
+    setEditingId(id);
+    setName(it.name);
+    setStock(it.stock);
+    setUnitCost(it.unitCost);
+    setOpen(true);
+  }
+
+  async function save() {
+    if (!name.trim()) return;
+
+    await upsertInventory(
+      { name: name.trim(), stock: Math.max(0, stock), unitCost: Math.max(0, unitCost) },
+      editingId
     );
 
-    function openCreate() {
-        setEditingId(undefined);
-        setName('');
-        setStock(0);
-        setUnitCost(0);
-        setOpen(true);
-    }
+    setOpen(false);
+    await load();
+  }
 
-    function openEdit(id: string) {
-        const it = items.find((x) => x.id === id);
-        if (!it) return;
-        setEditingId(id);
-        setName(it.name);
-        setStock(it.stock);
-        setUnitCost(it.unitCost);
-        setOpen(true);
-    }
+  return (
+    <IonPage>
+      <IonHeader>
+        <IonToolbar>
+          <IonButtons slot="end">
+            <IonButton size="large" color="primary" onClick={openCreate}>
+              + AGREGAR
+            </IonButton>
+          </IonButtons>
 
-    async function save() {
-        if (!name.trim()) return;
+          <IonTitle className="ion-text-center">
+            <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.1 }}>
+              <span style={{ fontSize: 20, fontWeight: 800 }}>DulceStock</span>
+              <span style={{ fontSize: 13, opacity: 0.7, fontWeight: 500 }}>
+                Inventario (Unidades)
+              </span>
+            </div>
+          </IonTitle>
+        </IonToolbar>
+      </IonHeader>
 
-        await upsertInventory(
-            { name: name.trim(), stock: Math.max(0, stock), unitCost: Math.max(0, unitCost) },
-            editingId
-        );
+      <IonContent className="ion-padding">
+        <IonSearchbar
+          value={query}
+          onIonInput={(e) => setQuery(String(e.detail.value ?? ''))}
+          placeholder="Buscar insumo..."
+          debounce={150}
+        />
 
-        setOpen(false);
-        await load();
-    }
+        {items.length === 0 && (
+          <p style={{ opacity: 0.7 }}>
+            Aún no tienes insumos. Pulsa <strong>+ AGREGAR</strong> para crear el primero.
+          </p>
+        )}
 
-    return (
-        <IonPage>
-            <IonHeader>
-                <IonToolbar>
-                    <IonButtons slot="end">
-                        <IonButton size="large" color="primary" onClick={openCreate}>
-                            + AGREGAR
-                        </IonButton>
-                    </IonButtons>
+        {items.length > 0 && visibleItems.length === 0 && (
+          <p style={{ opacity: 0.7 }}>No hay resultados para “{query}”.</p>
+        )}
 
-                    <IonTitle className="ion-text-center">
-                        <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.1 }}>
-                            <span style={{ fontSize: 20, fontWeight: 800 }}>DulceStock</span>
-                            <span style={{ fontSize: 13, opacity: 0.7, fontWeight: 500 }}>
-                                Inventario (Unidades)
-                            </span>
-                        </div>
-                    </IonTitle>
-                </IonToolbar>
-            </IonHeader>
+        <IonList style={{ background: 'transparent' }}>
+          {visibleItems.map((i) => (
+            <IonCard key={i.id} style={{ borderRadius: 14 }}>
+              <IonCardContent>
+                <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}>
+                  <div style={{ flex: 1, cursor: 'pointer' }} onClick={() => openEdit(i.id)}>
+                    <div style={{ fontSize: 16, fontWeight: 800 }}>{i.name}</div>
 
+                    <div style={{ marginTop: 8, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                      <IonChip color="secondary">
+                        <IonLabel>
+                          <strong>Stock:</strong> {i.stock} u
+                        </IonLabel>
+                      </IonChip>
 
-            <IonContent className="ion-padding">
-                {items.length === 0 && (
-                    <p style={{ opacity: 0.7 }}>
-                        Aún no tienes insumos. Pulsa <strong>+ AGREGAR</strong> para crear el primero.
-                    </p>
-                )}
+                      <IonChip color="tertiary">
+                        <IonLabel>
+                          <strong>Costo/u:</strong> ${i.unitCost.toFixed(2)}
+                        </IonLabel>
+                      </IonChip>
+                    </div>
+                  </div>
 
-                <IonList>
-                    {items.map((i) => (
-                        <IonItem key={i.id} button onClick={() => openEdit(i.id)}>
-                            <IonLabel>
-                                <h2>{i.name}</h2>
-                                <p>
-                                    Stock: {i.stock} u · Costo/u: ${i.unitCost.toFixed(2)}
-                                </p>
-                            </IonLabel>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+                      <IonButton
+                        size="small"
+                        color="primary"
+                        onClick={async (e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          await adjustStock(i.id, +1);
+                          await load();
+                        }}
+                      >
+                        <IonIcon slot="icon-only" icon={add} />
+                      </IonButton>
 
-                            <IonButton
-                                onClick={async (e) => {
-                                    e.preventDefault();
-                                    e.stopPropagation();
-                                    await adjustStock(i.id, +1);
-                                    load();
-                                }}
-                            >
-                                +1
-                            </IonButton>
+                      <IonButton
+                        size="small"
+                        color="medium"
+                        onClick={async (e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          await adjustStock(i.id, -1);
+                          await load();
+                        }}
+                      >
+                        <IonIcon slot="icon-only" icon={remove} />
+                      </IonButton>
+                    </div>
 
-                            <IonButton
-                                onClick={async (e) => {
-                                    e.preventDefault();
-                                    e.stopPropagation();
-                                    await adjustStock(i.id, -1);
-                                    load();
-                                }}
-                            >
-                                -1
-                            </IonButton>
+                    <IonButton
+                      size="small"
+                      color="danger"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setDeleteId(i.id);
+                      }}
+                    >
+                      <IonIcon slot="start" icon={trash} />
+                      Borrar
+                    </IonButton>
+                  </div>
+                </div>
+              </IonCardContent>
+            </IonCard>
+          ))}
+        </IonList>
 
-                            <IonButton
-                                color="danger"
-                                onClick={(e) => {
-                                    e.preventDefault();
-                                    e.stopPropagation();
-                                    setDeleteId(i.id);
-                                }}
-                            >
-                                Borrar
-                            </IonButton>
-                        </IonItem>
-                    ))}
-                </IonList>
+        <IonModal isOpen={open} onDidDismiss={() => setOpen(false)}>
+          <IonHeader>
+            <IonToolbar>
+              <IonTitle>{editingItem ? 'Editar insumo' : 'Nuevo insumo'}</IonTitle>
+              <IonButtons slot="end">
+                <IonButton onClick={() => setOpen(false)}>Cerrar</IonButton>
+              </IonButtons>
+            </IonToolbar>
+          </IonHeader>
 
-                <IonModal isOpen={open} onDidDismiss={() => setOpen(false)}>
-                    <IonHeader>
-                        <IonToolbar>
-                            <IonTitle>{editingItem ? 'Editar insumo' : 'Nuevo insumo'}</IonTitle>
-                            <IonButtons slot="end">
-                                <IonButton onClick={() => setOpen(false)}>Cerrar</IonButton>
-                            </IonButtons>
-                        </IonToolbar>
-                    </IonHeader>
+          <IonContent className="ion-padding">
+            <IonItem>
+              <IonLabel position="stacked">Nombre</IonLabel>
+              <IonInput
+                value={name}
+                onIonInput={(e) => setName(String(e.detail.value ?? ''))}
+              />
+            </IonItem>
 
-                    <IonContent className="ion-padding">
-                        <IonItem>
-                            <IonLabel position="stacked">Nombre</IonLabel>
-                            <IonInput
-                                value={name}
-                                onIonInput={(e) => setName(String(e.detail.value ?? ''))}
-                            />
-                        </IonItem>
+            <IonItem>
+              <IonLabel position="stacked">Stock (unidades)</IonLabel>
+              <IonInput
+                type="number"
+                value={stock}
+                onIonInput={(e) => setStock(Math.max(0, toNumber(e.detail.value, 0)))}
+              />
+            </IonItem>
 
-                        <IonItem>
-                            <IonLabel position="stacked">Stock (unidades)</IonLabel>
-                            <IonInput
-                                type="number"
-                                value={stock}
-                                onIonInput={(e) =>
-                                    setStock(Math.max(0, toNumber(e.detail.value, 0)))
-                                }
-                            />
-                        </IonItem>
+            <IonItem>
+              <IonLabel position="stacked">Costo por unidad ($)</IonLabel>
+              <IonInput
+                type="number"
+                value={unitCost}
+                onIonInput={(e) => setUnitCost(Math.max(0, toNumber(e.detail.value, 0)))}
+              />
+            </IonItem>
 
-                        <IonItem>
-                            <IonLabel position="stacked">Costo por unidad ($)</IonLabel>
-                            <IonInput
-                                type="number"
-                                value={unitCost}
-                                onIonInput={(e) =>
-                                    setUnitCost(Math.max(0, toNumber(e.detail.value, 0)))
-                                }
-                            />
-                        </IonItem>
+            <div style={{ marginTop: 16 }}>
+              <IonButton expand="block" onClick={save}>
+                Guardar
+              </IonButton>
+            </div>
+          </IonContent>
+        </IonModal>
 
-                        <div style={{ marginTop: 16 }}>
-                            <IonButton expand="block" onClick={save}>
-                                Guardar
-                            </IonButton>
-                        </div>
-                    </IonContent>
-                </IonModal>
-
-                <IonAlert
-                    isOpen={!!deleteId}
-                    header="Eliminar insumo"
-                    message="¿Seguro que deseas eliminar este insumo?"
-                    buttons={[
-                        { text: 'Cancelar', role: 'cancel', handler: () => setDeleteId(null) },
-                        {
-                            text: 'Eliminar',
-                            role: 'destructive',
-                            handler: async () => {
-                                if (deleteId) await removeInventory(deleteId);
-                                setDeleteId(null);
-                                load();
-                            },
-                        },
-                    ]}
-                    onDidDismiss={() => setDeleteId(null)}
-                />
-            </IonContent>
-        </IonPage>
-    );
+        <IonAlert
+          isOpen={!!deleteId}
+          header="Eliminar insumo"
+          message="¿Seguro que deseas eliminar este insumo?"
+          buttons={[
+            { text: 'Cancelar', role: 'cancel', handler: () => setDeleteId(null) },
+            {
+              text: 'Eliminar',
+              role: 'destructive',
+              handler: async () => {
+                if (deleteId) await removeInventory(deleteId);
+                setDeleteId(null);
+                await load();
+              },
+            },
+          ]}
+          onDidDismiss={() => setDeleteId(null)}
+        />
+      </IonContent>
+    </IonPage>
+  );
 }

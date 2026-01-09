@@ -2,19 +2,25 @@ import {
     IonAlert,
     IonButton,
     IonButtons,
+    IonCard,
+    IonCardContent,
+    IonChip,
     IonContent,
     IonHeader,
+    IonIcon,
     IonInput,
     IonItem,
     IonLabel,
     IonList,
     IonModal,
     IonPage,
+    IonSearchbar,
     IonSelect,
     IonSelectOption,
     IonTitle,
     IonToolbar,
 } from '@ionic/react';
+import { add, pencil, trash } from 'ionicons/icons';
 import { useEffect, useMemo, useState } from 'react';
 
 import { InventoryItem } from '../../models/inventory';
@@ -31,6 +37,8 @@ function toNumber(v: any, fallback = 0) {
 export default function RecipesPage() {
     const [inventory, setInventory] = useState<InventoryItem[]>([]);
     const [recipes, setRecipes] = useState<Recipe[]>([]);
+
+    const [query, setQuery] = useState('');
 
     const [open, setOpen] = useState(false);
     const [editingId, setEditingId] = useState<string | undefined>(undefined);
@@ -55,9 +63,18 @@ export default function RecipesPage() {
     }, []);
 
     const editingRecipe = useMemo(
-        () => recipes.find(r => r.id === editingId),
+        () => recipes.find((r) => r.id === editingId),
         [recipes, editingId]
     );
+
+    const filteredRecipes = useMemo(() => {
+        const q = query.trim().toLowerCase();
+        const base = !q
+            ? recipes
+            : recipes.filter((r) => r.name.toLowerCase().includes(q));
+
+        return [...base].sort((a, b) => a.name.localeCompare(b.name, 'es', { sensitivity: 'base' }));
+    }, [recipes, query]);
 
     async function openCreate() {
         await load();
@@ -71,12 +88,12 @@ export default function RecipesPage() {
         setOpen(true);
     }
 
-
     async function openEdit(id: string) {
         await load();
 
-        const r = recipes.find(x => x.id === id);
+        const r = recipes.find((x) => x.id === id);
         if (!r) return;
+
         setEditingId(id);
         setName(r.name);
         setYieldUnits(r.yieldUnits);
@@ -86,22 +103,25 @@ export default function RecipesPage() {
         setOpen(true);
     }
 
-
     function addLine() {
         if (!lineItemId) return;
         if (lineQty <= 0) return;
 
-        setLines(prev => [...prev, { itemId: lineItemId, qty: Math.max(1, Math.floor(lineQty)) }]);
+        setLines((prev) => [
+            ...prev,
+            { itemId: lineItemId, qty: Math.max(1, Math.floor(lineQty)) },
+        ]);
+
         setLineItemId('');
         setLineQty(1);
     }
 
     function removeLineAt(index: number) {
-        setLines(prev => prev.filter((_, i) => i !== index));
+        setLines((prev) => prev.filter((_, i) => i !== index));
     }
 
     function itemNameById(id: string) {
-        return inventory.find(i => i.id === id)?.name ?? 'Insumo eliminado';
+        return inventory.find((i) => i.id === id)?.name ?? 'Insumo eliminado';
     }
 
     async function save() {
@@ -142,35 +162,95 @@ export default function RecipesPage() {
                 </IonToolbar>
             </IonHeader>
 
-
             <IonContent className="ion-padding">
-                <IonList>
-                    {recipes.map(r => {
-                        const c = calcRecipeCost(r, inventory);
-                        return (
-                            <IonItem key={r.id} button onClick={() => openEdit(r.id)}>
-                                <IonLabel>
-                                    <h2>{r.name}</h2>
-                                    <p>
-                                        Rinde: {r.yieldUnits} u · Costo lote: ${c.totalCost.toFixed(2)} · Costo/u: $
-                                        {c.unitCost.toFixed(2)}
-                                    </p>
-                                </IonLabel>
+                <IonSearchbar
+                    value={query}
+                    placeholder="Buscar receta..."
+                    onIonInput={(e) => setQuery(String(e.detail.value ?? ''))}
+                    style={{ marginBottom: 10 }}
+                />
 
-                                <IonButton
-                                    color="danger"
-                                    onClick={(e) => {
-                                        e.preventDefault();
-                                        e.stopPropagation();
-                                        setDeleteId(r.id);
+                {filteredRecipes.length === 0 && (
+                    <p style={{ opacity: 0.7 }}>
+                        No hay recetas. Pulsa <strong>+ NUEVA</strong> para crear la primera.
+                    </p>
+                )}
+
+                {filteredRecipes.map((r) => {
+                    const c = calcRecipeCost(r, inventory);
+
+                    return (
+                        <IonCard
+                            key={r.id}
+                            button
+                            onClick={() => openEdit(r.id)}
+                            style={{
+                                borderRadius: 14,
+                                boxShadow: '0 6px 18px rgba(0,0,0,0.10)',
+                                marginBottom: 14,
+                            }}
+                        >
+                            <IonCardContent>
+                                <div
+                                    style={{
+                                        display: 'flex',
+                                        justifyContent: 'space-between',
+                                        alignItems: 'flex-start',
+                                        gap: 12,
                                     }}
                                 >
-                                    Borrar
-                                </IonButton>
-                            </IonItem>
-                        );
-                    })}
-                </IonList>
+                                    <div style={{ flex: 1 }}>
+                                        <div style={{ fontWeight: 800, fontSize: 16, opacity: 0.75 }}>
+                                            {r.name}
+                                        </div>
+
+                                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 10 }}>
+                                            <IonChip color="primary">
+                                                Rinde: {r.yieldUnits} u
+                                            </IonChip>
+
+                                            <IonChip color="success">
+                                                Costo lote: ${c.totalCost.toFixed(2)}
+                                            </IonChip>
+
+                                            <IonChip color="tertiary">
+                                                Costo/u: ${c.unitCost.toFixed(2)}
+                                            </IonChip>
+                                        </div>
+                                    </div>
+
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: 10, alignItems: 'flex-end' }}>
+                                        <IonButton
+                                            size="small"
+                                            fill="solid"
+                                            color="medium"
+                                            onClick={(e) => {
+                                                e.preventDefault();
+                                                e.stopPropagation();
+                                                openEdit(r.id);
+                                            }}
+                                        >
+                                            <IonIcon icon={pencil} />
+                                        </IonButton>
+
+                                        <IonButton
+                                            size="small"
+                                            fill="solid"
+                                            color="danger"
+                                            onClick={(e) => {
+                                                e.preventDefault();
+                                                e.stopPropagation();
+                                                setDeleteId(r.id);
+                                            }}
+                                        >
+                                            <IonIcon icon={trash} />
+                                        </IonButton>
+                                    </div>
+                                </div>
+                            </IonCardContent>
+                        </IonCard>
+                    );
+                })}
 
                 <IonModal isOpen={open} onDidDismiss={() => setOpen(false)}>
                     <IonHeader>
@@ -185,7 +265,10 @@ export default function RecipesPage() {
                     <IonContent className="ion-padding">
                         <IonItem>
                             <IonLabel position="stacked">Nombre</IonLabel>
-                            <IonInput value={name} onIonInput={(e) => setName(String(e.detail.value ?? ''))} />
+                            <IonInput
+                                value={name}
+                                onIonInput={(e) => setName(String(e.detail.value ?? ''))}
+                            />
                         </IonItem>
 
                         <IonItem>
@@ -210,11 +293,13 @@ export default function RecipesPage() {
                                     placeholder="Selecciona un insumo"
                                     onIonChange={(e) => setLineItemId(String(e.detail.value))}
                                 >
-                                    {[...inventory].sort((a, b) => a.name.localeCompare(b.name)).map(i => (
-                                        <IonSelectOption key={i.id} value={i.id}>
-                                            {i.name} (stock {i.stock})
-                                        </IonSelectOption>
-                                    ))}
+                                    {[...inventory]
+                                        .sort((a, b) => a.name.localeCompare(b.name, 'es', { sensitivity: 'base' }))
+                                        .map((i) => (
+                                            <IonSelectOption key={i.id} value={i.id}>
+                                                {i.name} (stock {i.stock})
+                                            </IonSelectOption>
+                                        ))}
                                 </IonSelect>
                             </IonItem>
 
@@ -227,11 +312,12 @@ export default function RecipesPage() {
                                 />
                             </IonItem>
 
-                            <IonButton expand="block" onClick={addLine} style={{ marginTop: 8 }}>
-                                + Agregar ingrediente
+                            <IonButton expand="block" onClick={addLine} style={{ marginTop: 10 }}>
+                                <IonIcon icon={add} style={{ marginRight: 8 }} />
+                                Agregar ingrediente
                             </IonButton>
 
-                            <IonList>
+                            <IonList style={{ marginTop: 10 }}>
                                 {lines.map((ln, idx) => (
                                     <IonItem key={`${ln.itemId}-${idx}`}>
                                         <IonLabel>
