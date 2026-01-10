@@ -6,4 +6,5 @@ export interface InventoryItem {
   updatedAt: number; 
   contenidoNeto: number;  //cantidad que trae el empaque
   unidadContenidoNeto: string;   //unidad del empaque
+  contenidoDisponible: number;
 }

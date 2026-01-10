@@ -36,6 +36,12 @@ export async function adjustStock(id: string, delta: number): Promise<void> {
   if (idx < 0) return;
 
   data[idx].stock = Math.max(0, data[idx].stock + delta);
+  data[idx].contenidoDisponible = data[idx].stock * data[idx].contenidoNeto
   data[idx].updatedAt = Date.now();
   await setJSON(KEY, data);
+}
+
+export function stockReal(stock: number, unidades: number){
+  const disponible = stock * unidades;
+  return disponible;
 }

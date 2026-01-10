@@ -1,4 +1,4 @@
-export type OrderStatus = 'PENDING' | 'DELIVERED';
+export type OrderStatus = 'PENDING' | 'DELIVERED' | 'IN_PROGRESS';
 
 export interface Order {
   id: string;

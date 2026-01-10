@@ -29,6 +29,7 @@ import {
   listInventory,
   removeInventory,
   upsertInventory,
+  stockReal,
 } from '../../services/inventoryService';
 
 function toNumber(v: any, fallback = 0) {
@@ -94,9 +95,9 @@ export default function InventoryPage() {
 
   async function save() {
     if (!name.trim()) return;
-
+    const disponible = stockReal(stock,contNeto);
     await upsertInventory(
-      { name: name.trim(), stock: Math.max(0, stock), unitCost: Math.max(0, unitCost),contenidoNeto: Math.max(0,contNeto),unidadContenidoNeto:unit },
+      { name: name.trim(), stock: Math.max(0, stock), unitCost: Math.max(0, unitCost),contenidoNeto: Math.max(0,contNeto),unidadContenidoNeto:unit,contenidoDisponible: disponible },
       editingId
     );
 
@@ -154,7 +155,7 @@ export default function InventoryPage() {
                     <div style={{ marginTop: 8, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                       <IonChip color="secondary">
                         <IonLabel>
-                          <strong>Stock:</strong> {i.stock} u
+                          <strong>Stock:</strong> {i.contenidoDisponible} {i.unidadContenidoNeto}
                         </IonLabel>
                       </IonChip>
 
