@@ -124,10 +124,23 @@ export default function OrdersPage() {
         await load();
     }
 
-    async function toggleStatus(o: Order) {
-        const next: OrderStatus = o.status === 'PENDING' ? 'DELIVERED' : 'PENDING';
+    async function advanceStatus(o: Order) {
+        if (o.status === 'DELIVERED') return;
+
+        const next = nextStatus(o.status);
         await updateOrder(o.id, { status: next });
-        load();
+        await load();
+    }
+
+    function nextStatus(status: OrderStatus): OrderStatus {
+        switch (status) {
+            case 'PENDING':
+                return 'IN_PROGRESS';
+            case 'IN_PROGRESS':
+                return 'DELIVERED';
+            default:
+                return status;
+        }
     }
 
     function formatDate(ts?: number) {
@@ -138,17 +151,17 @@ export default function OrdersPage() {
             return '';
         }
     }
-async function shareOrder(o: Order) {
-				const r = recipeById(o.recipeId);
-				if (!r) return;
+    async function shareOrder(o: Order) {
+        const r = recipeById(o.recipeId);
+        if (!r) return;
 
-				const cost = calcRecipeCost(r, inventory);
-				const unitPrice = suggestedUnitPrice(cost.unitCost, marginPct);
+        const cost = calcRecipeCost(r, inventory);
+        const unitPrice = suggestedUnitPrice(cost.unitCost, marginPct);
 
-				const totalUnits = r.yieldUnits * o.batches;
-				const totalPrice = unitPrice * totalUnits;
+        const totalUnits = r.yieldUnits * o.batches;
+        const totalPrice = unitPrice * totalUnits;
 
-				const text = `🍪 Pedido - DulceStock
+        const text = `🍪 Pedido - DulceStock
 Producto: ${r.name}
 Cantidad: ${totalUnits} unidades
 Precio por unidad: $${unitPrice.toFixed(2)}
@@ -158,8 +171,8 @@ Estado: ${o.status === 'PENDING' ? 'Pendiente' : 'Entregado'}
 Fecha: ${formatDate(o.createdAt)}
 `;
 
-				await shareText('Pedido DulceStock', text);
-}
+        await shareText('Pedido DulceStock', text);
+    }
 
     return (
         <IonPage>
@@ -190,10 +203,14 @@ Fecha: ${formatDate(o.createdAt)}
                     <IonSegmentButton value="PENDING">
                         <IonLabel>Pendientes</IonLabel>
                     </IonSegmentButton>
+                    <IonSegmentButton value="IN_PROGRESS">
+                        <IonLabel>En proceso</IonLabel>
+                    </IonSegmentButton>
                     <IonSegmentButton value="DELIVERED">
                         <IonLabel>Entregados</IonLabel>
                     </IonSegmentButton>
                 </IonSegment>
+
 
                 <IonSearchbar
                     value={query}
@@ -241,9 +258,22 @@ Fecha: ${formatDate(o.createdAt)}
                                         </div>
 
                                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 10 }}>
-                                            <IonChip color={o.status === 'PENDING' ? 'warning' : 'success'}>
-                                                {o.status === 'PENDING' ? 'Pendiente' : 'Entregado'}
+                                            <IonChip
+                                                color={
+                                                    o.status === 'PENDING'
+                                                        ? 'warning'
+                                                        : o.status === 'IN_PROGRESS'
+                                                            ? 'primary'
+                                                            : 'success'
+                                                }
+                                            >
+                                                {o.status === 'PENDING'
+                                                    ? 'Pendiente'
+                                                    : o.status === 'IN_PROGRESS'
+                                                        ? 'En proceso'
+                                                        : 'Entregado'}
                                             </IonChip>
+
 
                                             <IonChip color="medium">
                                                 {formatDate(o.createdAt)}
@@ -254,8 +284,15 @@ Fecha: ${formatDate(o.createdAt)}
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: 10, alignItems: 'flex-end' }}>
                                         <IonButton
                                             size="small"
-                                            color={o.status === 'PENDING' ? 'success' : 'medium'}
-                                            onClick={() => toggleStatus(o)}
+                                            color={
+                                                o.status === 'PENDING'
+                                                    ? 'warning'
+                                                    : o.status === 'IN_PROGRESS'
+                                                        ? 'primary'
+                                                        : 'success'
+                                            }
+                                            disabled={o.status === 'DELIVERED'}
+                                            onClick={() => advanceStatus(o)}
                                         >
                                             <IonIcon icon={checkmarkDone} />
                                         </IonButton>
