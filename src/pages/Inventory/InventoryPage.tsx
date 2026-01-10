@@ -149,7 +149,7 @@ export default function InventoryPage() {
               <IonCardContent>
                 <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}>
                   <div style={{ flex: 1, cursor: 'pointer' }} onClick={() => openEdit(i.id)}>
-                    <div style={{ fontSize: 16, fontWeight: 800 }}>{i.name}</div>
+                    <div style={{ fontSize: 16, fontWeight: 800 }}>{i.name} {i.contenidoNeto} {i.unidadContenidoNeto}</div>
 
                     <div style={{ marginTop: 8, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                       <IonChip color="secondary">
@@ -259,8 +259,8 @@ export default function InventoryPage() {
               onIonChange={e => setUnit(e.detail.value)}
               >
                 <IonSelectOption value="gr">Gramos (gr)</IonSelectOption>
-                <IonSelectOption value="kg">Kilogramos (Kg)</IonSelectOption>
-                <IonSelectOption value="l">Litros (l)</IonSelectOption>
+                <IonSelectOption value="Kg">Kilogramos (Kg)</IonSelectOption>
+                <IonSelectOption value="L">Litros (l)</IonSelectOption>
                 <IonSelectOption value="ml">Mililitros (ml)</IonSelectOption>
               </IonSelect>
             </IonItem>
