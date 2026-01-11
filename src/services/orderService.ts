@@ -1,7 +1,7 @@
 import { v4 as uuidv4 } from 'uuid';
 import { Order } from '../models/order';
 import { getJSON, setJSON } from './storage';
-import { adjustStock } from './inventoryService';
+import { adjustStock, validarStock } from './inventoryService';
 import { buscarReceta } from './recipeService';
 
 const KEY = 'orders';
@@ -20,7 +20,7 @@ export async function updateOrder(id: string, patch: Partial<Order>): Promise<vo
   const data = await listOrders();
   const idx = data.findIndex(x => x.id === id);
   if (idx < 0) return;
-  
+
   const prev = data[idx];
   const next: Order = { ...prev, ...patch };
 
@@ -28,7 +28,13 @@ export async function updateOrder(id: string, patch: Partial<Order>): Promise<vo
     const receta = await buscarReceta(prev.recipeId);
     if (receta) {
       for (const line of receta.lines) {
-        await adjustStock(line.itemId,line.qty,'enProceso');
+        const validacion = await validarStock(line.itemId, (line.qty * prev.batches));
+        if (validacion === -1) {
+          throw new Error(
+            `Stock insuficiente para esta receta, revise el inventario`
+          );
+        }
+        await adjustStock(line.itemId, prev.batches, line.qty, 'enProceso');
       }
     }
   }

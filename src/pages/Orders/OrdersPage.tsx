@@ -55,6 +55,8 @@ export default function OrdersPage() {
     const [batches, setBatches] = useState<number>(1);
 
     const [deleteId, setDeleteId] = useState<string | null>(null);
+    const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
 
     async function load() {
         const [inv, rec, ord, settings] = await Promise.all([
@@ -126,10 +128,13 @@ export default function OrdersPage() {
 
     async function advanceStatus(o: Order) {
         if (o.status === 'DELIVERED') return;
-
-        const next = nextStatus(o.status);
-        await updateOrder(o.id, { status: next });
-        await load();
+        try {
+            const next = nextStatus(o.status);
+            await updateOrder(o.id, { status: next });
+            await load();
+        } catch (err: any) {
+            setErrorMsg(err.message || 'Stock insuficiente');
+        }
     }
 
     function nextStatus(status: OrderStatus): OrderStatus {
@@ -392,6 +397,13 @@ Fecha: ${formatDate(o.createdAt)}
                     onDidDismiss={() => setDeleteId(null)}
                 />
             </IonContent>
+            <IonAlert
+                isOpen={!!errorMsg}
+                header="Inventario insuficiente"
+                message={errorMsg ?? ''}
+                buttons={['OK']}
+                onDidDismiss={() => setErrorMsg(null)}
+            />
         </IonPage>
     );
 }

@@ -22,6 +22,7 @@ import {
 } from '@ionic/react';
 import { add, remove, trash } from 'ionicons/icons';
 import { useEffect, useMemo, useState } from 'react';
+import { useIonViewWillEnter } from '@ionic/react';
 
 import { InventoryItem } from '../../models/inventory';
 import {
@@ -95,9 +96,9 @@ export default function InventoryPage() {
 
   async function save() {
     if (!name.trim()) return;
-    const disponible = stockReal(stock,contNeto);
+    const disponible = stockReal(stock, contNeto);
     await upsertInventory(
-      { name: name.trim(), stock: Math.max(0, stock), unitCost: Math.max(0, unitCost),contenidoNeto: Math.max(0,contNeto),unidadContenidoNeto:unit,contenidoDisponible: disponible },
+      { name: name.trim(), stock: Math.max(0, stock), unitCost: Math.max(0, unitCost), contenidoNeto: Math.max(0, contNeto), unidadContenidoNeto: unit, contenidoDisponible: disponible },
       editingId
     );
 
@@ -175,7 +176,7 @@ export default function InventoryPage() {
                         onClick={async (e) => {
                           e.preventDefault();
                           e.stopPropagation();
-                          await adjustStock(i.id, +1,'botonAumenta');
+                          await adjustStock(i.id, 0, +1, 'botonAumenta');
                           await load();
                         }}
                       >
@@ -188,7 +189,7 @@ export default function InventoryPage() {
                         onClick={async (e) => {
                           e.preventDefault();
                           e.stopPropagation();
-                          await adjustStock(i.id, -1,'botondisminuye');
+                          await adjustStock(i.id, 0, -1, 'botondisminuye');
                           await load();
                         }}
                       >
@@ -246,19 +247,19 @@ export default function InventoryPage() {
             <IonItem>
               <IonLabel position="stacked">Contenido neto por unidad (Ingrese el contenido neteo en gramos o mililitros)</IonLabel>
               <IonInput
-              type='number'
-              placeholder='Ingrese el contenido neteo en gramos o mililitros'
-              value={contNeto}
-              onIonInput={(e) => setContNeto(Math.max(0, toNumber(e.detail.value, 0)))}
+                type='number'
+                placeholder='Ingrese el contenido neteo en gramos o mililitros'
+                value={contNeto}
+                onIonInput={(e) => setContNeto(Math.max(0, toNumber(e.detail.value, 0)))}
               />
             </IonItem>
 
             <IonItem>
               <IonLabel position="stacked">Unidad de Medida</IonLabel>
               <IonSelect
-              value={unit}
-              placeholder="Selecciona unidad"
-              onIonChange={e => setUnit(e.detail.value)}
+                value={unit}
+                placeholder="Selecciona unidad"
+                onIonChange={e => setUnit(e.detail.value)}
               >
                 <IonSelectOption value="gr">Gramos (gr)</IonSelectOption>
                 <IonSelectOption value="ml">Mililitros (ml)</IonSelectOption>
