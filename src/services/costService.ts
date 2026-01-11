@@ -27,9 +27,9 @@ export function calcRecipeCost(recipe: Recipe, inventory: InventoryItem[]) {
   for (const line of recipe.lines) {
     const item = inventory.find(i => i.id === line.itemId);
     if (!item) continue;
-    //harina paquete de 1kg 
-    const itemUnit = item.unidadContenidoNeto?.toLowerCase() || 'gr'; //kg
-    const netInBase = item.contenidoNeto * (CONVERSION_FACTORS[itemUnit] || 1); //costo?
+    
+    const itemUnit = item.unidadContenidoNeto?.toLowerCase() || 'gr'; 
+    const netInBase = item.contenidoNeto * (CONVERSION_FACTORS[itemUnit] || 1); 
 
     const recipeUnit = line.unidadMedida?.toLowerCase();
     const qtyInBase = line.qty * (CONVERSION_FACTORS[recipeUnit]);

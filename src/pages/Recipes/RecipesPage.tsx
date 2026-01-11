@@ -308,6 +308,7 @@ export default function RecipesPage() {
                                 <IonLabel position="stacked">Cantidad</IonLabel>
                                 <IonInput
                                     type="number"
+                                    placeholder='Ingrese la cantidad en gramos o mililitros'
                                     value={lineQty}
                                     onIonInput={(e) => setLineQty(Math.max(1, toNumber(e.detail.value, 1)))}
                                 />
@@ -321,8 +322,6 @@ export default function RecipesPage() {
                                     onIonChange={e => setUnitM(e.detail.value)}
                                 >
                                     <IonSelectOption value="gr">Gramos (gr)</IonSelectOption>
-                                    <IonSelectOption value="kg">Kilogramos (Kg)</IonSelectOption>
-                                    <IonSelectOption value="l">Litros (l)</IonSelectOption>
                                     <IonSelectOption value="ml">Mililitros (ml)</IonSelectOption>
                                 </IonSelect>
                             </IonItem>
