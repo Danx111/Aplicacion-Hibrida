@@ -29,3 +29,9 @@ export async function removeRecipe(id: string): Promise<void> {
   const data = await listRecipes();
   await setJSON(KEY, data.filter(x => x.id !== id));
 }
+
+export async function buscarReceta(id:string): Promise<Recipe> {
+  const data = await listRecipes();
+  const indice = data.findIndex(x => x.id === id);
+  return data[indice];  
+}

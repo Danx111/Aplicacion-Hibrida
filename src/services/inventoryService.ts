@@ -30,18 +30,29 @@ export async function removeInventory(id: string): Promise<void> {
   await setJSON(KEY, data.filter(x => x.id !== id));
 }
 
-export async function adjustStock(id: string, delta: number): Promise<void> {
+export async function adjustStock(id: string, delta: number, lugarAumento: 'botonAumenta' | 'botondisminuye' | 'enProceso'): Promise<void> {
   const data = await listInventory();
   const idx = data.findIndex(x => x.id === id);
   if (idx < 0) return;
-
-  data[idx].stock = Math.max(0, data[idx].stock + delta);
-  data[idx].contenidoDisponible = data[idx].stock * data[idx].contenidoNeto
-  data[idx].updatedAt = Date.now();
-  await setJSON(KEY, data);
+  
+  if (lugarAumento === 'botonAumenta') {
+    data[idx].contenidoDisponible = data[idx].contenidoDisponible + data[idx].contenidoNeto;
+    data[idx].updatedAt = Date.now();
+    await setJSON(KEY, data);
+  }
+  if(lugarAumento === 'botondisminuye'){
+    data[idx].contenidoDisponible = data[idx].contenidoDisponible - data[idx].contenidoNeto;
+    data[idx].updatedAt = Date.now();
+    await setJSON(KEY, data);
+  }
+  else {
+    data[idx].contenidoDisponible = data[idx].contenidoDisponible - delta;
+    data[idx].updatedAt = Date.now();
+    await setJSON(KEY, data);
+  }
 }
 
-export function stockReal(stock: number, unidades: number){
+export function stockReal(stock: number, unidades: number) {
   const disponible = stock * unidades;
   return disponible;
 }

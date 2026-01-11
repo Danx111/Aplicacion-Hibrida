@@ -175,7 +175,7 @@ export default function InventoryPage() {
                         onClick={async (e) => {
                           e.preventDefault();
                           e.stopPropagation();
-                          await adjustStock(i.id, +1);
+                          await adjustStock(i.id, +1,'botonAumenta');
                           await load();
                         }}
                       >
@@ -188,7 +188,7 @@ export default function InventoryPage() {
                         onClick={async (e) => {
                           e.preventDefault();
                           e.stopPropagation();
-                          await adjustStock(i.id, -1);
+                          await adjustStock(i.id, -1,'botondisminuye');
                           await load();
                         }}
                       >
@@ -244,9 +244,10 @@ export default function InventoryPage() {
             </IonItem>
 
             <IonItem>
-              <IonLabel position="stacked">Contenido neto por unidad</IonLabel>
+              <IonLabel position="stacked">Contenido neto por unidad (Ingrese el contenido neteo en gramos o mililitros)</IonLabel>
               <IonInput
               type='number'
+              placeholder='Ingrese el contenido neteo en gramos o mililitros'
               value={contNeto}
               onIonInput={(e) => setContNeto(Math.max(0, toNumber(e.detail.value, 0)))}
               />
@@ -260,8 +261,6 @@ export default function InventoryPage() {
               onIonChange={e => setUnit(e.detail.value)}
               >
                 <IonSelectOption value="gr">Gramos (gr)</IonSelectOption>
-                <IonSelectOption value="Kg">Kilogramos (Kg)</IonSelectOption>
-                <IonSelectOption value="L">Litros (l)</IonSelectOption>
                 <IonSelectOption value="ml">Mililitros (ml)</IonSelectOption>
               </IonSelect>
             </IonItem>
