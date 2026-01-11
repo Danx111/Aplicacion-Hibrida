@@ -24,20 +24,28 @@ export async function updateOrder(id: string, patch: Partial<Order>): Promise<vo
   const prev = data[idx];
   const next: Order = { ...prev, ...patch };
 
+  // Solo descuenta cuando pasa de PENDING -> IN_PROGRESS
   if (prev.status === 'PENDING' && next.status === 'IN_PROGRESS') {
     const receta = await buscarReceta(prev.recipeId);
-    if (receta) {
+
+    if (receta?.lines?.length) {
+      // 1) VALIDAR TODO primero
       for (const line of receta.lines) {
-        const validacion = await validarStock(line.itemId, (line.qty * prev.batches));
-        if (validacion === -1) {
-          throw new Error(
-            `Stock insuficiente para esta receta, revise el inventario`
-          );
+        const cantidadNecesaria = line.qty * prev.batches;
+        const ok = await validarStock(line.itemId, cantidadNecesaria);
+        if (ok === -1) {
+          // NO descontamos nada aún
+          throw new Error('Stock insuficiente para esta receta, revise el inventario');
         }
+      }
+
+      // 2) DESCONTAR TODO solo si todo pasó
+      for (const line of receta.lines) {
         await adjustStock(line.itemId, prev.batches, line.qty, 'enProceso');
       }
     }
   }
+
   data[idx] = next;
   await setJSON(KEY, data);
 }
