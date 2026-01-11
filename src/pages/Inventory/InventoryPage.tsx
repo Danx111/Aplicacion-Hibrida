@@ -194,7 +194,7 @@ export default function InventoryPage() {
                           e.preventDefault();
                           e.stopPropagation();
                           await adjustStock(i.id, 0, +1, 'botonAumenta');
-                          // NO load(): se recarga por el evento
+                          
                         }}
                       >
                         <IonIcon slot="icon-only" icon={add} />
@@ -203,15 +203,17 @@ export default function InventoryPage() {
                       <IonButton
                         size="small"
                         color="medium"
+                        disabled={(i.contenidoDisponible ?? 0) <= 0}   // ✅ AQUÍ
                         onClick={async (e) => {
                           e.preventDefault();
                           e.stopPropagation();
                           await adjustStock(i.id, 0, -1, 'botondisminuye');
-                          // NO load(): se recarga por el evento
+                          
                         }}
                       >
                         <IonIcon slot="icon-only" icon={remove} />
                       </IonButton>
+
                     </div>
 
                     <IonButton
@@ -311,7 +313,7 @@ export default function InventoryPage() {
               handler: async () => {
                 if (deleteId) await removeInventory(deleteId);
                 setDeleteId(null);
-           
+
               },
             },
           ]}
