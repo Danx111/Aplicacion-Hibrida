@@ -22,7 +22,6 @@ import {
 } from '@ionic/react';
 import { add, remove, trash } from 'ionicons/icons';
 import { useEffect, useMemo, useState } from 'react';
-import { useIonViewWillEnter } from '@ionic/react';
 
 import { InventoryItem } from '../../models/inventory';
 import {
@@ -31,6 +30,7 @@ import {
   removeInventory,
   upsertInventory,
   stockReal,
+  INVENTORY_UPDATED_EVENT,
 } from '../../services/inventoryService';
 
 function toNumber(v: any, fallback = 0) {
@@ -50,7 +50,6 @@ export default function InventoryPage() {
   const [unit, setUnit] = useState('');
 
   const [deleteId, setDeleteId] = useState<string | null>(null);
-
   const [query, setQuery] = useState('');
 
   async function load() {
@@ -59,7 +58,15 @@ export default function InventoryPage() {
 
   useEffect(() => {
     load();
+
+    const onInvUpdate = () => load();
+    window.addEventListener(INVENTORY_UPDATED_EVENT, onInvUpdate);
+
+    return () => {
+      window.removeEventListener(INVENTORY_UPDATED_EVENT, onInvUpdate);
+    };
   }, []);
+
 
   const editingItem = useMemo(
     () => items.find((i) => i.id === editingId),
@@ -96,14 +103,22 @@ export default function InventoryPage() {
 
   async function save() {
     if (!name.trim()) return;
+
     const disponible = stockReal(stock, contNeto);
+
     await upsertInventory(
-      { name: name.trim(), stock: Math.max(0, stock), unitCost: Math.max(0, unitCost), contenidoNeto: Math.max(0, contNeto), unidadContenidoNeto: unit, contenidoDisponible: disponible },
+      {
+        name: name.trim(),
+        stock: Math.max(0, stock),
+        unitCost: Math.max(0, unitCost),
+        contenidoNeto: Math.max(0, contNeto),
+        unidadContenidoNeto: unit,
+        contenidoDisponible: disponible,
+      },
       editingId
     );
 
     setOpen(false);
-    await load();
   }
 
   return (
@@ -151,7 +166,9 @@ export default function InventoryPage() {
               <IonCardContent>
                 <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}>
                   <div style={{ flex: 1, cursor: 'pointer' }} onClick={() => openEdit(i.id)}>
-                    <div style={{ fontSize: 16, fontWeight: 800 }}>{i.name} {i.contenidoNeto} {i.unidadContenidoNeto}</div>
+                    <div style={{ fontSize: 16, fontWeight: 800 }}>
+                      {i.name} {i.contenidoNeto} {i.unidadContenidoNeto}
+                    </div>
 
                     <div style={{ marginTop: 8, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                       <IonChip color="secondary">
@@ -177,7 +194,7 @@ export default function InventoryPage() {
                           e.preventDefault();
                           e.stopPropagation();
                           await adjustStock(i.id, 0, +1, 'botonAumenta');
-                          await load();
+                          // NO load(): se recarga por el evento
                         }}
                       >
                         <IonIcon slot="icon-only" icon={add} />
@@ -190,7 +207,7 @@ export default function InventoryPage() {
                           e.preventDefault();
                           e.stopPropagation();
                           await adjustStock(i.id, 0, -1, 'botondisminuye');
-                          await load();
+                          // NO load(): se recarga por el evento
                         }}
                       >
                         <IonIcon slot="icon-only" icon={remove} />
@@ -229,10 +246,7 @@ export default function InventoryPage() {
           <IonContent className="ion-padding">
             <IonItem>
               <IonLabel position="stacked">Nombre</IonLabel>
-              <IonInput
-                value={name}
-                onIonInput={(e) => setName(String(e.detail.value ?? ''))}
-              />
+              <IonInput value={name} onIonInput={(e) => setName(String(e.detail.value ?? ''))} />
             </IonItem>
 
             <IonItem>
@@ -245,10 +259,12 @@ export default function InventoryPage() {
             </IonItem>
 
             <IonItem>
-              <IonLabel position="stacked">Contenido neto por unidad (Ingrese el contenido neteo en gramos o mililitros)</IonLabel>
+              <IonLabel position="stacked">
+                Contenido neto por unidad (Ingrese el contenido neteo en gramos o mililitros)
+              </IonLabel>
               <IonInput
-                type='number'
-                placeholder='Ingrese el contenido neteo en gramos o mililitros'
+                type="number"
+                placeholder="Ingrese el contenido neteo en gramos o mililitros"
                 value={contNeto}
                 onIonInput={(e) => setContNeto(Math.max(0, toNumber(e.detail.value, 0)))}
               />
@@ -259,7 +275,7 @@ export default function InventoryPage() {
               <IonSelect
                 value={unit}
                 placeholder="Selecciona unidad"
-                onIonChange={e => setUnit(e.detail.value)}
+                onIonChange={(e) => setUnit(e.detail.value)}
               >
                 <IonSelectOption value="gr">Gramos (gr)</IonSelectOption>
                 <IonSelectOption value="ml">Mililitros (ml)</IonSelectOption>
@@ -295,7 +311,7 @@ export default function InventoryPage() {
               handler: async () => {
                 if (deleteId) await removeInventory(deleteId);
                 setDeleteId(null);
-                await load();
+           
               },
             },
           ]}
